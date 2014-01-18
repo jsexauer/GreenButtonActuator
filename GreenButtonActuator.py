@@ -7,7 +7,7 @@ Created on Fri Jan 17 19:34:01 2014
 
 datafile = 'DailyElectricUsage.csv'
 pnodes = ['BARBADOES35 KV  ABU2','BETZWOOD230 KV  LOAD1','PECO','_ENERGY_ONLY']
-
+weatherfile = 'KLOM_norristown'
 
 
 import pandas
@@ -68,7 +68,10 @@ def densityCloudByTags(df, columns):
     for label, data in df.groupby(columns):    
         
         # Find mean
-        mean = data.groupby('hr')['USAGE'].agg('mean')           
+        mean = data.groupby('hr')['USAGE'].agg('mean')
+        # Add in any missing hours
+        for h in set(range(24)) - set(data['hr']):
+            mean = mean.set_value(h, None)
             
     
         # Create a density cloud of the MW
@@ -139,13 +142,46 @@ for pnode in pnodes:
     df['pnode_'+pnode] = df['USAGE'] * pnode_prices['Price']
 
 cols = ['COST'] + ['pnode_'+p for p in pnodes]
-df[cols].plot()
-df[cols].cumsum().plot()
+#df[cols].plot()
+#df[cols].cumsum().plot()
 
 
 
+#############################################################################
+# Lets look at some weather correlations
+weather = pandas.read_csv(r'weather_data/%s.csv' % weatherfile)
+weather['ts'] = weather['DateUTC'].apply(makeTimestamp)
+weather = weather.set_index('ts', drop=False)
+weather['Wind SpeedMPH'] = weather['Wind SpeedMPH'].str.replace('Calm','0')
+weather['Wind SpeedMPH'] = weather['Wind SpeedMPH'].apply(lambda x: float(x))
+
+# Handle unclean data
+weather = weather.drop(weather[weather['TemperatureF'] < -20].index)
+weather = weather.drop(weather[weather['Wind SpeedMPH'] < 0].index)
 
 
+# Resample to hourly (taking average)
+weather2 = weather.resample('h')
+
+# Grab most frequest condition for hour
+condMode = lambda x: x.value_counts().index[0]
+makeTimestampKey = lambda x: makeTimestamp(x.strftime("%d-%b-%Y %H:00"))
+weather['ts_k'] = weather['ts'].apply(makeTimestampKey)
+weather2['Conditions'] = weather.groupby('ts_k')['Conditions'].apply(condMode)
+weather = weather2
+    
+
+# Add some weather related tags
+df['Temp'] = weather['TemperatureF']
+df['Wind'] = weather['Wind SpeedMPH']
+df['Conditions'] = weather['Conditions']
+# 10 deg temp categories (ie, 50-60 deg)
+tempGrads = lambda x: '%d-%d'% ((int(x/10)*10),(int(x/10)*10)+10)
+df['TempGrads'] = df['Temp'].fillna(0).apply(tempGrads)
+
+
+densityCloudByTags(df, 'TempGrads')
+densityCloudByTags(df, 'Conditions')
 
 
 
