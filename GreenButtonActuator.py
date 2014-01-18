@@ -180,8 +180,54 @@ tempGrads = lambda x: '%d-%d'% ((int(x/10)*10),(int(x/10)*10)+10)
 df['TempGrads'] = df['Temp'].fillna(0).apply(tempGrads)
 
 
-densityCloudByTags(df, 'TempGrads')
-densityCloudByTags(df, 'Conditions')
+#densityCloudByTags(df, 'TempGrads')
+#densityCloudByTags(df, 'Conditions')
+
+############################################################################
+# Line Chart Test
+template = "        {c:[{v: 'Date(%(ts)s)'}, {v: %(USAGE)s}, {v: %(COST)s}]},\n"
+html = """
+<!--
+You are free to copy and use this sample in accordance with the terms of the
+Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Google Visualization API Sample</title>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript">
+    google.load('visualization', '1', {packages: ['annotatedtimeline']});
+    function drawVisualization() {
+      var data = new google.visualization.DataTable(
+      {
+       cols: [{id: 'date', label: 'Date', type: 'datetime'},
+              {id: 'USAGE', label: 'Usage (kWh)', type: 'number'},
+              {id: 'COST', label: 'Cost ($)', type: 'number'}],
+       rows: [
+"""
+for lbl, r in df.iterrows():
+    r['ts']=r['ts'].strftime('%Y,%m,%d,%H,%M,%S')
+    html+= template % r.fillna('null')
+html +="""
+            ]
+      });
+    
+      var annotatedtimeline = new google.visualization.AnnotatedTimeLine(
+          document.getElementById('visualization'));
+      annotatedtimeline.draw(data, {'displayAnnotations': true});
+    }
+    
+    google.setOnLoadCallback(drawVisualization);
+  </script>
+</head>
+<body style="font-family: Arial;border: 0 none;">
+<div id="visualization" style="width: 800px; height: 400px;"></div>
+</body>
+</html>
+"""
 
 
 
