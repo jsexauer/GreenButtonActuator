@@ -2,13 +2,17 @@
 import imp, os, sys
 import traceback
 from flask import Flask, request, session
-from redis_session import RedisSessionInterface
+from serverside_sessions import create_managed_session
+
+root = os.path.dirname(os.path.realpath(__file__))+os.sep
 
 app = Flask(__name__)
+app.secret_key = 'v\xfc\x9d\xfb\xa2\xc7uj\x97F\xc2\xb2\x14\xa4\xaa\xef\x8e\xedz\xe4\xc0daI'
 app.debug = True
-app.session_interface = RedisSessionInterface()
+# Server-side session handeling
+app.config['SESSION_PATH'] = root+'_SESSION_DATA'+os.sep
+app.session_interface = create_managed_session(app)
 
-root = root = os.path.dirname(os.path.realpath(__file__))+os.sep
 
 
 try:
@@ -41,7 +45,6 @@ def viewraw():
 
 
 
-app.secret_key = 'v\xfc\x9d\xfb\xa2\xc7uj\x97F\xc2\xb2\x14\xa4\xaa\xef\x8e\xedz\xe4\xc0daI'
 
 if __name__=='__main__':
     app.run()
