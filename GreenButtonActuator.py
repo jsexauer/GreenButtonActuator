@@ -6,6 +6,7 @@ Created on Fri Jan 17 19:34:01 2014
 """
 
 datafile = 'DailyElectricUsage.csv'
+pnodes = ['BARBADOES35 KV  ABU2','BETZWOOD230 KV  LOAD1','PECO','_ENERGY_ONLY']
 
 
 
@@ -16,6 +17,9 @@ plt.close('all')
 
 # Read in usage log (csv format, probably specific to PECO)
 df = pandas.read_csv(datafile, skiprows=4)
+
+# Convert costs (drop dollar sign and convert to float)
+df['COST'] = df['COST'].str.slice(1).apply(lambda x: float(x))
 
 # Convert times
 makeTimestamp = lambda x: pandas.Timestamp(x)
@@ -101,6 +105,48 @@ def densityCloudByTags(df, columns):
         plt.grid(axis='y')
         plt.show()
 
-densityCloudByTags(df, 'DayOfWeek')
-densityCloudByTags(df, 'Weekday')
-densityCloudByTags(df, ['Season','Weekday'])
+#densityCloudByTags(df, 'DayOfWeek')
+#densityCloudByTags(df, 'Weekday')
+#densityCloudByTags(df, ['Season','Weekday'])
+
+############################################################################
+
+# What if we paid wholesale prices at our local pnode?
+
+for pnode in pnodes:
+    # Bring in PJM prices from DataMiner
+    pnode_prices = pandas.read_csv('pnode_data/%s.csv' % pnode)
+    assert len(pnode_prices['PRICINGTYPE'].unique()) == 1
+    assert pnode_prices['PRICINGTYPE'].unique()[0] == 'TotalLMP'
+    
+    # Unpiviot the data
+    pnode_prices = pandas.melt(pnode_prices, id_vars=['PUBLISHDATE'],
+                value_vars=['H%d'%i for i in xrange(1,25)])
+    pnode_prices = pnode_prices.rename(columns={
+                'variable':'Hour',
+                'value':'Price'})
+    # Convert hour to standard format and to hour beginning standard
+    cvtHr = lambda x: "%d:00" % (int(x)-1)
+    pnode_prices['Hour'] = pnode_prices['Hour'].str.slice(1).apply(cvtHr)
+    pnode_prices['ts'] = \
+        (pnode_prices['PUBLISHDATE']+' '+
+         pnode_prices['Hour'])              .apply(makeTimestamp)
+    pnode_prices = pnode_prices.set_index('ts', drop=False)
+    # Convert prices to $/kWhr (currently $/MWhr)
+    pnode_prices['Price'] = pnode_prices['Price']/1000
+
+    # Figure out what our wholesale price would have been
+    df['pnode_'+pnode] = df['USAGE'] * pnode_prices['Price']
+
+cols = ['COST'] + ['pnode_'+p for p in pnodes]
+df[cols].plot()
+df[cols].cumsum().plot()
+
+
+
+
+
+
+
+
+
