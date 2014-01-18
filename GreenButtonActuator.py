@@ -149,7 +149,7 @@ cols = ['COST'] + ['pnode_'+p for p in pnodes]
 
 #############################################################################
 # Lets look at some weather correlations
-weather = pandas.read_csv(r'weather_data/%s.csv' % weatherfile)
+weather = pandas.read_csv(r'weather_data/%s.csv' % weatherfile,na_values=['N/A'])
 weather['ts'] = weather['DateUTC'].apply(makeTimestamp)
 weather = weather.set_index('ts', drop=False)
 weather['Wind SpeedMPH'] = weather['Wind SpeedMPH'].str.replace('Calm','0')
