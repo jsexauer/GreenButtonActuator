@@ -5,7 +5,7 @@ Created on Fri Jan 17 19:34:01 2014
 @author: Jason
 """
 
-datafile = 'DailyElectricUsage.csv'
+datafile = 'DailyElectricUsage'
 pnodes = ['BARBADOES35 KV  ABU2','BETZWOOD230 KV  LOAD1','PECO','_ENERGY_ONLY']
 weatherfile = 'KLOM_norristown'
 
@@ -13,10 +13,13 @@ weatherfile = 'KLOM_norristown'
 import pandas
 import numpy as np
 import matplotlib.pylab as plt
+import os, sys
 plt.close('all')
 
+root = os.path.dirname(os.path.realpath(__file__))+os.sep
+
 # Read in usage log (csv format, probably specific to PECO)
-df = pandas.read_csv(datafile, skiprows=4)
+df = pandas.read_csv(root+datafile+'.csv', skiprows=4)
 
 # Convert costs (drop dollar sign and convert to float)
 df['COST'] = df['COST'].str.slice(1).apply(lambda x: float(x))
@@ -118,7 +121,7 @@ def densityCloudByTags(df, columns):
 
 for pnode in pnodes:
     # Bring in PJM prices from DataMiner
-    pnode_prices = pandas.read_csv('pnode_data/%s.csv' % pnode)
+    pnode_prices = pandas.read_csv(root+'pnode_data/%s.csv' % pnode)
     assert len(pnode_prices['PRICINGTYPE'].unique()) == 1
     assert pnode_prices['PRICINGTYPE'].unique()[0] == 'TotalLMP'
     
@@ -149,7 +152,7 @@ cols = ['COST'] + ['pnode_'+p for p in pnodes]
 
 #############################################################################
 # Lets look at some weather correlations
-weather = pandas.read_csv(r'weather_data/%s.csv' % weatherfile,na_values=['N/A'])
+weather = pandas.read_csv(root+r'weather_data/%s.csv' % weatherfile,na_values=['N/A'])
 weather['ts'] = weather['DateUTC'].apply(makeTimestamp)
 weather = weather.set_index('ts', drop=False)
 weather['Wind SpeedMPH'] = weather['Wind SpeedMPH'].str.replace('Calm','0')
@@ -185,6 +188,9 @@ df['TempGrads'] = df['Temp'].fillna(0).apply(tempGrads)
 
 ############################################################################
 # Line Chart Test
+# API sandbox: https://code.google.com/apis/ajax/playground/?type=visualization#annotated_time_line
+# API docs: https://developers.google.com/chart/interactive/docs/gallery/annotatedtimeline?csw=1
+# DataTable docs: https://developers.google.com/chart/interactive/docs/reference?csw=1
 template = "        {c:[{v: 'Date(%(ts)s)'}, {v: %(USAGE)s}, {v: %(COST)s}]},\n"
 html = """
 <!--
