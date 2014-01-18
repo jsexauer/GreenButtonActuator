@@ -48,51 +48,59 @@ df['Month'] = df['ts'].apply(lambda x: x.strftime('%b'))
 assert len(df['UNITS'].unique()) == 1, "Energy values in inconsistent units"
 
 
-# Create a profile for day of week
-maxY = df['USAGE'].max()
-for dayOfWeek, data in df.groupby('DayOfWeek'):    
-    
-    # Find every 10th percentile
-    percentiles = {}
-    for p in xrange(10,100,10):
-        percentiles[p] = data.groupby('hr')['USAGE'].apply(
-                                lambda x: np.percentile(x, p))
-    percentiles = pandas.DataFrame(percentiles)
-    
-    # Find mean
-    mean = data.groupby('hr')['USAGE'].agg('mean')           
+def densityCloudByTags(df, columns):
+    """Create density cloud of data for a given tag or group of tags
+    For example:
+        columns='DayOfWeek' --> Plots for Mon, Tue, Wed, Thur, ...
+        columns='Weekday' --> Plots of weekends vs weekday
+        columns=['Season','Weekday'] 
+            --> Plots of Summer, Spring, Winter, Fall Weekdays and Weekends
+    """
+    if columns == 'hr' or 'hr' in columns:
+        raise ValueError("Columns cannot contain hr tag")
         
+    # Create a profile for day of week
+    maxY = df['USAGE'].max()
+    for label, data in df.groupby(columns):    
+        
+        # Find mean
+        mean = data.groupby('hr')['USAGE'].agg('mean')           
+            
+    
+        # Create a density cloud of the MW
+        X = np.zeros([24, 100]) # Hours by resolution
+        Y = np.zeros([24, 100])
+        C = np.zeros([24, 100])    
+        for hr, data2 in data.groupby('hr'):        
+            freq = []
+            step = 1
+            rng = range(0,51,step)[1:]
+            freq += rng
+            bins = np.percentile(data2['USAGE'], rng)
+            
+            rng = range(50,101,step)[1:]
+            freq += [100 - a for a in rng]
+            bins = np.hstack([bins, np.percentile(data2['USAGE'], rng)])
+            freq = np.array(freq)
+               
+            X[hr,:] = np.ones(len(bins))*hr
+            Y[hr,:] = bins
+            C[hr,:] = freq
+        
+        plt.figure()
+        plt.xkcd()
+        plt.pcolor(X, Y, C, cmap=plt.cm.YlOrRd)
+        plt.plot(X[:,1], mean, color='k', label='Mean')
+        plt.colorbar().set_label('Probability Higher/Lower than Median')    
+        plt.legend(loc='upper left')
+        plt.xlabel('Hour of Day')
+        plt.ylabel('Usage (kWh)')
+        plt.ylim([0, maxY])
+        plt.xlim([0,23])
+        plt.title('Typical usage on %s' % str(label))
+        plt.grid(axis='y')
+        plt.show()
 
-    # Create a density cloud of the MW
-    X = np.zeros([24, 100]) # Hours by resolution
-    Y = np.zeros([24, 100])
-    C = np.zeros([24, 100])    
-    for hr, data2 in data.groupby('hr'):        
-        freq = []
-        step = 1
-        rng = range(0,51,step)[1:]
-        freq += rng
-        bins = np.percentile(data2['USAGE'], rng)
-        
-        rng = range(50,101,step)[1:]
-        freq += [100 - a for a in rng]
-        bins = np.hstack([bins, np.percentile(data2['USAGE'], rng)])
-        freq = np.array(freq)
-           
-        X[hr,:] = np.ones(len(bins))*hr
-        Y[hr,:] = bins
-        C[hr,:] = freq
-    
-    plt.figure()
-    plt.xkcd()
-    plt.pcolor(X, Y, C, cmap=plt.cm.YlOrRd)
-    plt.plot(X[:,1], mean, color='k', label='Mean')
-    plt.colorbar().set_label('Probability Higher/Lower than Median')    
-    plt.legend(loc='upper left')
-    plt.xlabel('Hour of Day')
-    plt.ylabel('Usage (kWh)')
-    plt.ylim([0, maxY])
-    plt.xlim([0,23])
-    plt.title('Typical usage on %s' % str(dayOfWeek))
-    plt.grid(axis='y')
-    plt.show()
+densityCloudByTags(df, 'DayOfWeek')
+densityCloudByTags(df, 'Weekday')
+densityCloudByTags(df, ['Season','Weekday'])
