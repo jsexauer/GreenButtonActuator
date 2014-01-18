@@ -24,8 +24,9 @@ except:
     @app.route('/<path:path>')
     def catch_all(path):
         return 'PROBLEM IMPORTING GBA:<br>'+debug_info
-    
-    
+    # Don't let anyone else route over us
+    null_func = lambda x: None
+    app.route = lambda x: null_func
 
 
 @app.route('/')
