@@ -52,6 +52,7 @@ def read_usage(excpetion=None):
         if data != '':
             try:
                 df = GBA.read_PECO_csv(StringIO(data))
+                df = GBA.load_weather(df, 'KLOM_norristown')
             except:
                 return "Unable to load data.  Bad format"
             else:
@@ -60,6 +61,7 @@ def read_usage(excpetion=None):
         else:
             # Read in default dataset
             df = GBA.read_PECO_csv('DailyElectricUsage')
+            df = GBA.load_weather(df, 'KLOM_norristown')
             session['df'] = df
             msg =  "Loaded default dataset..."
         return msg+'<br /> <a href="/dashboard">Go to dashboard</a>'
@@ -89,14 +91,24 @@ def drop_dataframe():
 from wtforms import Form, TextField, SelectMultipleField, validators
 
 class DashboardForm(Form):
-    #sliceStart = TextField('Start', [validators.Length(min=4, max=25)])
+    idx = TextField("Slice (Leave blank unless you know what you're doing)")
     tags = SelectMultipleField('Tags', choices=[
                 ('--T','-------TIME TAGS-------'),
                 ('Weekday',     'Weekday vs Weekend'),
                 ('DayOfWeek',   'Day of Week (ie, Mon, Tue, etc...)'),
                 ('Season',      'Season (ie, Spring, Fall, etc...)'),
                 ('Month',       'Month (ie, Jan, Feb, etc...)'),
-                ('--P','-------PNODES-------'),
+                ('--W','-------WEATHER-------'),
+                ('TempGrads',    'Tempearture in 10 deg increments'),
+                #('Wind',         'Wind Speed'),
+                ('Conditions',    'Condition (Clear, Cloudy, etc...)'),
+            ],
+            validators=[validators.NoneOf(['--T','--P'],
+                                          "Don't select headers")]
+            
+            )
+    pnodes = SelectMultipleField('Alternate Pricings', choices=[
+                ('--P','-------PJM PNODES-------'),
                 ('BARBADOES35 KV  ABU2',    'BARBADOES35 KV  ABU2'),
                 ('BETZWOOD230 KV  LOAD1',   'BETZWOOD230 KV  LOAD1'),
                 ('PECO',                    'PECO (Zone)'),
@@ -111,6 +123,8 @@ def dashboard():
     form = DashboardForm(request.form)
     if request.method == 'POST' and form.validate():
         session['tags'] = form.tags.data
+        session['pnodes'] = form.pnodes.data
+        session['idx'] = form.idx.data
         return redirect(url_for('report'))
     return render_template('dashboard.html', form=form)
 
@@ -118,10 +132,31 @@ def dashboard():
 def report(): 
     from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
     assert_data()
-    if 'tags' not in session.keys():
-        return redirect(url_for('dashboard'))
-    figures = GBA.density_cloud_by_tags(session['df'], session['tags'], 
-                                        silent=True)    
+    df = session['df']
+    
+    if 'idx' in session.keys() and len(session['idx'])>0:
+        idx = session['idx']
+        if idx.find(':') > -1:
+            lidx, ridx = idx.split(':')
+            df = df[lidx:ridx]
+        else:
+            df = df[idx]
+    
+    figures = []
+    if 'tags' in session.keys() and len(session['tags'])>0:
+        figures += GBA.density_cloud_by_tags(df, session['tags'], 
+                                            silent=True)
+                                            
+    if 'pnodes' in session.keys() and len(session['pnodes'])>0:
+        import matplotlib.pylab as plt
+        plt.ioff()
+        
+        pnodes = session['pnodes']
+        df = GBA.price_at_pnodes(df, pnodes)
+        cols = ['COST',] + ['pnode_'+p for p in pnodes]
+        figures.append(df[cols].plot().figure)        
+        figures.append(df[cols].cumsum().plot().figure)
+        
     session.drop('tags')
     s = '<h1>Figures</h1>'
     figures_rendered = []
@@ -132,7 +167,7 @@ def report():
         canvas.print_png(png_output)
         figures_rendered.append(png_output.getvalue())
     session['figures'] = figures_rendered
-    s += '<p><a href="/dashboard">Back to dashboard</a>'
+    s += '<p><a href="/dashboard">Back to dashboard</a></p><br /><br />'
     return s
         
 

@@ -1,20 +1,24 @@
 <html>
 <head>
 <style>
-#tags {
+#tags, #pnodes {
     width: 250px;
     height:300px;
 }
 </style>
 </head>
 <body>
-
+<h1>Dashboard</h1>
+<p>(<a href="/raw">raw data</a>)</p>
+<p>How would you like to pivot and look at the data?</p>
 {% from "_formhelpers.html" import render_field %}
 <form method=post action="">
   <dl>
-    {{ render_field(form.tags) }}
+    {{ render_field(form.idx) }} <br />
+    {{ render_field(form.tags) }} <br />
+    {{ render_field(form.pnodes) }} <br />
   </dl>
-  <p><input type=submit value=Register>
+  <p><input type=submit value="Submit">
 </form>
 
 </body>
