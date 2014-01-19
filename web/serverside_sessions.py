@@ -44,6 +44,9 @@ class ManagedSession(CallbackDict, SessionMixin):
         self.randval = randval
         self.hmac_digest = hmac_digest
 
+    def drop(self, key):
+        del self[key]
+
     def sign(self, secret):
         if not self.hmac_digest:
             self.randval = ''.join(random.sample(string.lowercase+string.digits, 20))

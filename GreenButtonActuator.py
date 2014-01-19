@@ -5,13 +5,13 @@ Created on Fri Jan 17 19:34:01 2014
 @author: Jason
 """
 
-if __name__ == '__main__':
-    datafile = 'DailyElectricUsage'
-    pnodes = ['BARBADOES35 KV  ABU2',
-              'BETZWOOD230 KV  LOAD1',
-              'PECO',
-              '_ENERGY_ONLY']
-    weather_station = 'KLOM_norristown'
+
+datafile = 'DailyElectricUsage'
+pnodes = ['BARBADOES35 KV  ABU2',
+          'BETZWOOD230 KV  LOAD1',
+          'PECO',
+          '_ENERGY_ONLY']
+weather_station = 'KLOM_norristown'
 
 
 import pandas
@@ -21,14 +21,18 @@ import os, sys
 
 root = os.path.dirname(os.path.realpath(__file__))+os.sep
 
-
+plt.ioff()
 
 makeTimestamp = lambda x: pandas.Timestamp(x)
 
 def read_PECO_csv(datafile):
     """Read csv file from PECO into a pandas dataframe"""
-    # Read in usage log (csv format, probably specific to PECO)
-    df = pandas.read_csv(root+datafile+'.csv', skiprows=4)
+    if hasattr(datafile, 'read'):
+        # Read buffer directly
+        df = pandas.read_csv(datafile, skiprows=4)
+    else:        
+        # Read in usage log (csv format, probably specific to PECO)
+        df = pandas.read_csv(root+datafile+'.csv', skiprows=4)
     
     # Convert costs (drop dollar sign and convert to float)
     df['COST'] = df['COST'].str.slice(1).apply(lambda x: float(x))
@@ -62,7 +66,7 @@ def read_PECO_csv(datafile):
     return df
 
 
-def density_cloud_by_tags(df, columns):
+def density_cloud_by_tags(df, columns, silent=False):
     """Create density cloud of data for a given tag or group of tags
     For example:
         columns='DayOfWeek' --> Plots for Mon, Tue, Wed, Thur, ...
@@ -70,6 +74,7 @@ def density_cloud_by_tags(df, columns):
         columns=['Season','Weekday'] 
             --> Plots of Summer, Spring, Winter, Fall Weekdays and Weekends
     """
+    figures = []
     if columns == 'hr' or 'hr' in columns:
         raise ValueError("Columns cannot contain hr tag")
         
@@ -116,7 +121,12 @@ def density_cloud_by_tags(df, columns):
         plt.xlim([0,23])
         plt.title('Typical usage on %s' % str(label))
         plt.grid(axis='y')
-        plt.show()
+        figures.append(plt.gcf())
+        if not silent:
+            plt.show()
+        
+    return figures
+        
 
 ############################################################################
 
@@ -262,6 +272,5 @@ if __name__ == '__main__':
     df = load_weather(df, weather_station)
     density_cloud_by_tags(df, 'TempGrads')
     density_cloud_by_tags(df, 'Conditions')
-    
 
 

@@ -1,0 +1,21 @@
+<html>
+<head>
+<style>
+#tags {
+    width: 250px;
+    height:300px;
+}
+</style>
+</head>
+<body>
+
+{% from "_formhelpers.html" import render_field %}
+<form method=post action="">
+  <dl>
+    {{ render_field(form.tags) }}
+  </dl>
+  <p><input type=submit value=Register>
+</form>
+
+</body>
+</html>

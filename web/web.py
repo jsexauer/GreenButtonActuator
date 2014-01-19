@@ -1,8 +1,10 @@
 # A very simple Flask Hello World app for you to get started with...
 import imp, os, sys
 import traceback
-from flask import Flask, request, session
+from flask import (Flask, request, session, redirect, url_for, render_template,
+                       make_response, abort)
 from serverside_sessions import create_managed_session
+from StringIO import StringIO
 
 root = os.path.dirname(os.path.realpath(__file__))+os.sep
 
@@ -13,7 +15,8 @@ app.debug = True
 app.config['SESSION_PATH'] = root+'_SESSION_DATA'+os.sep
 app.session_interface = create_managed_session(app)
 
-
+class DataNotLoaded(Exception):
+    pass
 
 try:
     GBA = imp.load_source('GBA', root+'..'+os.sep+'GreenButtonActuator.py')
@@ -33,19 +36,145 @@ except:
 def hello_world():
     if 'df' in session.keys():
         msg = 'You already have a dataframe loaded.  Good!<br><pre>%s</pre>' % session['df']
-        session.pop('df',None)
-        return msg
+        return msg+'<p><a href="/dashboard">Go to dashboard</a>'
     else:        
-        df = GBA.read_PECO_csv('DailyElectricUsage')
-        session['df'] = df
-        return 'Loaded daily electric usage.'
+        return redirect(url_for('read_usage'))
+
+@app.errorhandler(DataNotLoaded)
+def gotoread_usage(exception):
+    return redirect(url_for('read_usage'))
+    
+@app.route('/read_usage', methods=['POST','GET'])
+def read_usage(excpetion=None):
+    if request.method == 'POST':
+        # Read in usage statistics
+        data = request.form['csv_data']
+        if data != '':
+            try:
+                df = GBA.read_PECO_csv(StringIO(data))
+            except:
+                return "Unable to load data.  Bad format"
+            else:
+                session['df'] = df
+                msg = "Loaded your data..."
+        else:
+            # Read in default dataset
+            df = GBA.read_PECO_csv('DailyElectricUsage')
+            session['df'] = df
+            msg =  "Loaded default dataset..."
+        return msg+'<br /> <a href="/dashboard">Go to dashboard</a>'
+    else:
+        return """
+        <h1>PECO Green Button Analysis</h1>
+        <p>If you are a PECO customer, copy-paste your CSV
+        below (Star out account number and address if you want, but leave
+        those lines in place as the parser is counting on seeing them, even
+        though that data is not recorded).  </p>
+        <p>Otherwise, leave box blank to 
+        load a sample dataset.</p>
+        <form action="" method="post">
+        <textarea cols=100 rows=10 name='csv_data'></textarea>
+        <p><input type='submit' /></p>
+        </form>
+        """
+
+@app.route('/drop')
+def drop_dataframe():
+    for k in session.keys():
+        session.drop(k)
+    return "Your data has been removed from the server"
+
+####################################################################
+# Dashboard
+from wtforms import Form, TextField, SelectMultipleField, validators
+
+class DashboardForm(Form):
+    #sliceStart = TextField('Start', [validators.Length(min=4, max=25)])
+    tags = SelectMultipleField('Tags', choices=[
+                ('--T','-------TIME TAGS-------'),
+                ('Weekday',     'Weekday vs Weekend'),
+                ('DayOfWeek',   'Day of Week (ie, Mon, Tue, etc...)'),
+                ('Season',      'Season (ie, Spring, Fall, etc...)'),
+                ('Month',       'Month (ie, Jan, Feb, etc...)'),
+                ('--P','-------PNODES-------'),
+                ('BARBADOES35 KV  ABU2',    'BARBADOES35 KV  ABU2'),
+                ('BETZWOOD230 KV  LOAD1',   'BETZWOOD230 KV  LOAD1'),
+                ('PECO',                    'PECO (Zone)'),
+                ('_ENERGY_ONLY',            'System Energy Price'),
+            ],
+            validators=[validators.NoneOf(['--T','--P'],
+                                          "Don't select headers")]
+            
+            )
+@app.route('/dashboard', methods=['POST','GET'])
+def dashboard():
+    form = DashboardForm(request.form)
+    if request.method == 'POST' and form.validate():
+        session['tags'] = form.tags.data
+        return redirect(url_for('report'))
+    return render_template('dashboard.html', form=form)
+
+@app.route('/report')
+def report(): 
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+    assert_data()
+    if 'tags' not in session.keys():
+        return redirect(url_for('dashboard'))
+    figures = GBA.density_cloud_by_tags(session['df'], session['tags'], 
+                                        silent=True)    
+    session.drop('tags')
+    s = '<h1>Figures</h1>'
+    figures_rendered = []
+    for n, fig in enumerate(figures):
+        s+='<img src="plt/%d.png" /><br />' % n
+        canvas=FigureCanvas(fig)
+        png_output = StringIO()
+        canvas.print_png(png_output)
+        figures_rendered.append(png_output.getvalue())
+    session['figures'] = figures_rendered
+    s += '<p><a href="/dashboard">Back to dashboard</a>'
+    return s
+        
+
+@app.route("/plt/<int:fig_id>.png")
+def render_figure(fig_id): 
+    
+     
+    #    fig=Figure()
+    #    ax=fig.add_subplot(111)
+    #    x=[]
+    #    y=[]
+    #    now=datetime.datetime.now()
+    #    delta=datetime.timedelta(days=1)
+    #    for i in range(10):
+    #        x.append(now)
+    #        now+=delta
+    #        y.append(random.randint(0, 1000))
+    #    ax.plot_date(x, y, '-')
+    #    ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
+    #    fig.autofmt_xdate()
+     
+    if 'figures' not in session.keys():
+        abort(404)
+    try:
+        fig = session['figures'][fig_id]
+    except IndexError:
+        abort(404)
+
+    response=make_response(fig)
+    response.headers['Content-Type'] = 'image/png'
+    return response
+     
 
 @app.route('/raw')
 def viewraw():
-    return 'NotImplemented'
+    assert_data()
+    return GBA.google_linechart(session['df'])
 
 
-
+def assert_data():
+    if 'df' not in session.keys():
+        raise DataNotLoaded
 
 if __name__=='__main__':
     app.run()
