@@ -18,6 +18,7 @@ import pandas
 import numpy as np
 import matplotlib.pylab as plt
 import os, sys
+from datetime import datetime
 
 root = os.path.dirname(os.path.realpath(__file__))+os.sep
 
@@ -37,6 +38,11 @@ def read_PECO_csv(datafile):
     # Convert costs (drop dollar sign and convert to float)
     df['COST'] = df['COST'].str.slice(1).apply(lambda x: float(x))
     
+    df = _add_convieant_cols(df)
+    
+    return df
+
+def _add_convieant_cols(df):
     # Convert times
     df['ts'] = (df['DATE']+' '+df['START TIME']).apply(makeTimestamp)
     df.set_index('ts', drop=False, inplace=True)
@@ -62,6 +68,38 @@ def read_PECO_csv(datafile):
     df['Month'] = df['ts'].apply(lambda x: x.strftime('%b'))
     
     assert len(df['UNITS'].unique()) == 1, "Energy units inconsistent"
+    
+    return df
+
+def read_GB_xml(datafile):
+    """Read xml file in GB format"""
+    from BeautifulSoup import BeautifulStoneSoup
+    
+    if hasattr(datafile, 'read'):
+        # Read buffer directly
+        soup = BeautifulStoneSoup(datafile.read())
+    else:        
+        # Read in usage log (csv format, probably specific to PECO)
+        with open(datafile) as f:
+            soup = BeautifulStoneSoup(f.read())
+    # Create data appropriate for current dataframe fromat
+    data = []
+    getDate = lambda x: datetime.fromtimestamp(x).strftime('%Y-%m-%d')
+    getStart = lambda x: datetime.fromtimestamp(x).strftime('%H:%M')
+    getEnd = lambda x, y: datetime.fromtimestamp(x+y).strftime('%H:%M')
+    for r in soup.findAll('intervalreading'):
+        dt = int(r.start.string)
+        dur = int(r.duration.string)
+        row = ['Electric usage', getDate(dt), getStart(dt), getEnd(dt, dur),
+               #TYPE            DATE            START TIME  END TIME
+               float(r.value.string), 'kWh', -1.0, '']
+               #USAGE   UNIT  COST  NOTES
+        data.append(row)
+
+    df = pandas.DataFrame(data=data,columns=['TYPE', 'DATE', 'START TIME', 
+                              'END TIME','USAGE', 'UNITS', 'COST', 'NOTES'])
+    
+    df = _add_convieant_cols(df)
     
     return df
 
@@ -260,13 +298,19 @@ if __name__ == '__main__':
     plt.close('all')
     
     # Load data
-    df = read_PECO_csv(datafile)
+    datafile = r"C:\Users\Jason\Desktop\gb.xml"
+    df = read_GB_xml(datafile)
+    
+    # Load data
+    #df = read_PECO_csv(datafile)
     
     # Add in the prices at nearby PJM pnodes
     df = price_at_pnodes(df, pnodes)
     density_cloud_by_tags(df, 'DayOfWeek')
     density_cloud_by_tags(df, 'Weekday')
     density_cloud_by_tags(df, ['Season','Weekday'])
+    
+    raise Exception
     
     # Add in some weather info
     df = load_weather(df, weather_station)

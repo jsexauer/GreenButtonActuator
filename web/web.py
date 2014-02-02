@@ -5,6 +5,7 @@ from flask import (Flask, request, session, redirect, url_for, render_template,
                        make_response, abort)
 from serverside_sessions import create_managed_session
 from StringIO import StringIO
+from werkzeug import secure_filename
 
 root = os.path.dirname(os.path.realpath(__file__))+os.sep
 
@@ -14,6 +15,14 @@ app.debug = True
 # Server-side session handeling
 app.config['SESSION_PATH'] = root+'_SESSION_DATA'+os.sep
 app.session_interface = create_managed_session(app)
+# File uploads
+app.config['UPLOAD_FOLDER'] = root+'_UPLOADS'+os.sep
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB limit
+ALLOWED_EXTENSIONS = set(['xml'])
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 class DataNotLoaded(Exception):
     pass
@@ -48,10 +57,10 @@ def gotoread_usage(exception):
 def read_usage(excpetion=None):
     if request.method == 'POST':
         # Read in usage statistics
-        data = request.form['csv_data']
-        if data != '':
+        f = request.files['file']
+        if f and allowed_file(f.filename):
             try:
-                df = GBA.read_PECO_csv(StringIO(data))
+                df = GBA.read_GB_xml(f.stream)
                 df = GBA.load_weather(df, 'KLOM_norristown')
             except:
                 return "Unable to load data.  Bad format"
@@ -67,16 +76,15 @@ def read_usage(excpetion=None):
         return msg+'<br /> <a href="/dashboard">Go to dashboard</a>'
     else:
         return """
-        <h1>PECO Green Button Analysis</h1>
-        <p>If you are a PECO customer, copy-paste your CSV
-        below (Star out account number and address if you want, but leave
-        those lines in place as the parser is counting on seeing them, even
-        though that data is not recorded).  </p>
+        <h1>Green Button Analysis</h1>
+        <p>If your utiltiy supports Green-Button export, upload the xml
+        data using the dialog below.  </p>
         <p>Otherwise, leave box blank to 
         load a sample dataset.</p>
-        <form action="" method="post">
-        <textarea cols=100 rows=10 name='csv_data'></textarea>
+        <form action="" method="post" enctype="multipart/form-data" >
+        <input type=file name=file />
         <p><input type='submit' /></p>
+        <p><input type='submit' value="I have no data, use default" /></p>
         </form>
         """
 
