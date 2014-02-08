@@ -6,7 +6,7 @@ Created on Fri Jan 17 19:34:01 2014
 """
 
 
-datafile = 'DailyElectricUsage'
+datafile = 'DailyElectricUsage_2'
 pnodes = ['BARBADOES35 KV  ABU2',
           'BETZWOOD230 KV  LOAD1',
           'PECO',
@@ -34,6 +34,7 @@ def read_PECO_csv(datafile):
     else:        
         # Read in usage log (csv format, probably specific to PECO)
         df = pandas.read_csv(root+datafile+'.csv', skiprows=4)
+
     
     # Convert costs (drop dollar sign and convert to float)
     df['COST'] = df['COST'].str.slice(1).apply(lambda x: float(x))
@@ -88,11 +89,16 @@ def read_GB_xml(datafile):
     getStart = lambda x: datetime.fromtimestamp(x).strftime('%H:%M')
     getEnd = lambda x, y: datetime.fromtimestamp(x+y).strftime('%H:%M')
     for r in soup.findAll('intervalreading'):
+        #import pdb; pdb.set_trace()
         dt = int(r.start.string)
         dur = int(r.duration.string)
+        try:
+            cost = float(r.cost.string)*(10.0**-5)
+        except AttributeError:
+            cost = None
         row = ['Electric usage', getDate(dt), getStart(dt), getEnd(dt, dur),
                #TYPE            DATE            START TIME  END TIME
-               float(r.value.string), 'kWh', -1.0, '']
+               float(r.value.string)/1000, 'kWh', cost, '']
                #USAGE   UNIT  COST  NOTES
         data.append(row)
 
@@ -243,56 +249,31 @@ def load_weather(df, weather_station):
 
 
 
-############################################################################
-# Line Chart Test
-# API sandbox: https://code.google.com/apis/ajax/playground/?type=visualization#annotated_time_line
-# API docs: https://developers.google.com/chart/interactive/docs/gallery/annotatedtimeline?csw=1
-# DataTable docs: https://developers.google.com/chart/interactive/docs/reference?csw=1
-def google_linechart(df):
-    template = "        {c:[{v: 'Date(%(ts)s)'}, {v: %(USAGE)s}, {v: %(COST)s}]},\n"
-    html = """
-    <!--
-    You are free to copy and use this sample in accordance with the terms of the
-    Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
-    -->
+
+def calculate_peak_price(df, peak_start, peak_end, peak_price, off_peak_price):
+    # print df
+    # import pdb; pdb.set_trace()
+    total_usage = 0
+    on_peak_hours = df[ (df['hr']>=peak_start) & (df['hr']<peak_end)]
+    off_peak_hours = df[ (df['hr']<peak_start) | (df['hr']>=peak_end)]
     
-    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-    <html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-      <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-      <title>Google Visualization API Sample</title>
-      <script type="text/javascript" src="http://www.google.com/jsapi"></script>
-      <script type="text/javascript">
-        google.load('visualization', '1', {packages: ['annotatedtimeline']});
-        function drawVisualization() {
-          var data = new google.visualization.DataTable(
-          {
-           cols: [{id: 'date', label: 'Date', type: 'datetime'},
-                  {id: 'USAGE', label: 'Usage (kWh)', type: 'number'},
-                  {id: 'COST', label: 'Cost ($)', type: 'number'}],
-           rows: [
-    """
-    for lbl, r in df.iterrows():
-        r['ts']=r['ts'].strftime('%Y,%m,%d,%H,%M,%S')
-        html+= template % r.fillna('null')
-    html +="""
-                ]
-          });
-        
-          var annotatedtimeline = new google.visualization.AnnotatedTimeLine(
-              document.getElementById('visualization'));
-          annotatedtimeline.draw(data, {'displayAnnotations': true});
-        }
-        
-        google.setOnLoadCallback(drawVisualization);
-      </script>
-    </head>
-    <body style="font-family: Arial;border: 0 none;">
-    <div id="visualization" style="width: 800px; height: 400px;"></div>
-    </body>
-    </html>
-    """
-    return html
+    old_on_peak_cost = on_peak_hours['COST'].sum()
+    old_off_peak_cost = off_peak_hours['COST'].sum()
+    total_old_off_peak = old_off_peak_cost + old_on_peak_cost
+    
+    on_peak_usage = on_peak_hours['USAGE'].sum()
+    off_peak_usage = off_peak_hours['USAGE'].sum()
+
+    print "on"
+    print on_peak_usage
+
+    print "off"
+    print off_peak_usage
+
+    new_on_peak_cost = on_peak_usage * peak_price
+    new_off_peak_cost = off_peak_usage * off_peak_price
+
+    return (total_old_off_peak, new_on_peak_cost, new_off_peak_cost)
 
 if __name__ == '__main__':
     plt.close('all')
@@ -300,19 +281,21 @@ if __name__ == '__main__':
     # Load data
     datafile = r"C:\Users\Mike\Downloads\gb.xml"
     df = read_GB_xml(datafile)
-    
+
     # Load data
     #df = read_PECO_csv(datafile)
     
     # Add in the prices at nearby PJM pnodes
-    df = price_at_pnodes(df, pnodes)
-    density_cloud_by_tags(df, 'DayOfWeek')
-    density_cloud_by_tags(df, 'Weekday')
-    density_cloud_by_tags(df, ['Season','Weekday'])
-        
+    #df = price_at_pnodes(df, pnodes)
+
+    #density_cloud_by_tags(df, 'DayOfWeek')
+    #density_cloud_by_tags(df, 'Weekday')
+    #density_cloud_by_tags(df, ['Season','Weekday'])
+
+
     # Add in some weather info
-    df = load_weather(df, weather_station)
-    density_cloud_by_tags(df, 'TempGrads')
-    density_cloud_by_tags(df, 'Conditions')
+    #df = load_weather(df, weather_station)
+    #density_cloud_by_tags(df, 'TempGrads')
+    #density_cloud_by_tags(df, 'Conditions')
 
 

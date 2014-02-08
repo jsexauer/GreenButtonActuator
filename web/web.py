@@ -110,7 +110,8 @@ def drop_dataframe():
 from wtforms import Form, TextField, SelectMultipleField, validators
 
 class DashboardForm(Form):
-    idx = TextField("Slice (Leave blank unless you know what you're doing)")
+    idx = TextField("Slice (ex: enter 2013-10:2013-12 to only include " 
+                     "Oct 2013 to Dec 2013)")
     tags = SelectMultipleField('Tags', choices=[
                 ('--T','-------TIME TAGS-------'),
                 ('Weekday',     'Weekday vs Weekend'),
@@ -153,6 +154,8 @@ def report():
     assert_data()
     df = session['df']
     
+    # For example, user could sumbit 2013-10:2014-02 but we need to make this
+    #   into '2013-10':'2014-10'
     if 'idx' in session.keys() and len(session['idx'])>0:
         idx = session['idx']
         if idx.find(':') > -1:
@@ -218,12 +221,63 @@ def render_figure(fig_id):
     response=make_response(fig)
     response.headers['Content-Type'] = 'image/png'
     return response
-     
+    
+    
+############################################################################
+# Line Chart Test
+# API sandbox: https://code.google.com/apis/ajax/playground/?type=visualization#annotated_time_line
+# API docs: https://developers.google.com/chart/interactive/docs/gallery/annotatedtimeline?csw=1
+# DataTable docs: https://developers.google.com/chart/interactive/docs/reference?csw=1
+def google_linechart(df):
+    template = "        {c:[{v: 'Date(%(ts)s)'}, {v: %(USAGE)s}, {v: %(COST)s}]},\n"
+    html = """
+    <!--
+    You are free to copy and use this sample in accordance with the terms of the
+    Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
+    -->
+    
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+      <title>Google Visualization API Sample</title>
+      <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+      <script type="text/javascript">
+        google.load('visualization', '1', {packages: ['annotatedtimeline']});
+        function drawVisualization() {
+          var data = new google.visualization.DataTable(
+          {
+           cols: [{id: 'date', label: 'Date', type: 'datetime'},
+                  {id: 'USAGE', label: 'Usage (kWh)', type: 'number'},
+                  {id: 'COST', label: 'Cost ($)', type: 'number'}],
+           rows: [
+    """
+    for lbl, r in df.iterrows():
+        r['ts']=r['ts'].strftime('%Y,%m,%d,%H,%M,%S')
+        html+= template % r.fillna('null')
+    html +="""
+                ]
+          });
+        
+          var annotatedtimeline = new google.visualization.AnnotatedTimeLine(
+              document.getElementById('visualization'));
+          annotatedtimeline.draw(data, {'displayAnnotations': true});
+        }
+        
+        google.setOnLoadCallback(drawVisualization);
+      </script>
+    </head>
+    <body style="font-family: Arial;border: 0 none;">
+    <div id="visualization" style="width: 800px; height: 400px;"></div>
+    </body>
+    </html>
+    """
+    return html
 
 @app.route('/raw')
 def viewraw():
     assert_data()
-    return GBA.google_linechart(session['df'])
+    return google_linechart(session['df'])
 
 
 def assert_data():
