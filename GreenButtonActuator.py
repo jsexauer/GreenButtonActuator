@@ -154,7 +154,7 @@ def density_cloud_by_tags(df, columns, silent=False):
             C[hr,:] = freq
         
         plt.figure()
-        plt.xkcd()
+        #plt.xkcd()
         plt.pcolor(X, Y, C, cmap=plt.cm.YlOrRd)
         plt.plot(X[:,1], mean, color='k', label='Mean')
         plt.colorbar().set_label('Probability Higher/Lower than Median')    
@@ -279,11 +279,16 @@ if __name__ == '__main__':
     plt.close('all')
     
     # Load data
+<<<<<<< HEAD
     datafile = r"test"
     df = read_PECO_csv(datafile)
     #datafile = r"gb.xml"
     #df = read_GB_xml(datafile)
     print calculate_peak_price(df, 7, 19, 0.12, 0.03)
+=======
+    datafile = r"gb.xml"
+    df = read_GB_xml(datafile)
+>>>>>>> origin/web_changes
     
     # Load data
     #df = read_PECO_csv(datafile)

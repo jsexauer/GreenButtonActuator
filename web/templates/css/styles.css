@@ -1,0 +1,109 @@
+/****************************************************************************
+ * styles.css
+ *
+ * Computer Science 50
+ * Problem Set 7
+ *
+ * Global CSS.
+ ***************************************************************************/
+#info-table
+{
+    margin-left:auto;
+    margin-right:auto;
+    border:
+}
+
+
+h1{
+	font-size: 100px;
+}
+
+
+.container-fluid
+{
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+
+}
+
+.nav
+{
+    color: #3D3D3D;
+}
+
+#top
+{
+    /* center contents */
+    text-align: center;
+}
+
+#middle
+{
+    /* center contents */
+    overflow: auto;
+    text-align: center;
+    padding-bottom: 32px;
+}
+
+#bottom
+{   
+    width: 100%;
+    height: 32px;
+    bottom: 0;
+}
+
+#footer
+{ 
+    /* shrink bottom's font size */
+    font-size: smaller;
+
+    /* center contents */
+    text-align: center;
+}
+    
+#menu {
+	width: 100%;
+	height: 40px;
+    margin: 0;
+	padding-bottom: 0px 0px;
+	margin-bottom: 20px;
+	background: #000000;
+}
+
+#menu ul {
+	padding: 0px 0px 0px 0px;
+	list-style: none;
+	line-height: normal;
+}
+
+#menu li {
+	float: left;
+}
+
+#menu li.log {
+    margin-right: 20px;
+	float: right;
+}
+
+#menu a {
+	display: block;
+	height: 40px;
+	margin-left: 0px;
+	padding: 0px 10px 0px 10px;
+	line-height: 40px;
+	text-decoration: none;
+	text-align: center;
+	font-family: 'Helvetica';
+	font-size: 14px;
+	font-weight: 350;
+	color: #FFFFFF;
+}
+
+
+#menu a:hover{
+	background: #4F4F4F;
+	text-decoration: none;
+	color: #FFFFFF;
+}
+
