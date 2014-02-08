@@ -88,11 +88,16 @@ def read_GB_xml(datafile):
     getStart = lambda x: datetime.fromtimestamp(x).strftime('%H:%M')
     getEnd = lambda x, y: datetime.fromtimestamp(x+y).strftime('%H:%M')
     for r in soup.findAll('intervalreading'):
+        #import pdb; pdb.set_trace()
         dt = int(r.start.string)
         dur = int(r.duration.string)
+        try:
+            cost = float(r.cost.string)*(10.0**-5)
+        except AttributeError:
+            cost = None
         row = ['Electric usage', getDate(dt), getStart(dt), getEnd(dt, dur),
                #TYPE            DATE            START TIME  END TIME
-               float(r.value.string), 'kWh', -1.0, '']
+               float(r.value.string), 'kWh', cost, '']
                #USAGE   UNIT  COST  NOTES
         data.append(row)
 
@@ -298,23 +303,22 @@ if __name__ == '__main__':
     plt.close('all')
     
     # Load data
-    datafile = r"C:\Users\Jason\Desktop\gb.xml"
+    datafile = r"gb.xml"
     df = read_GB_xml(datafile)
     
     # Load data
     #df = read_PECO_csv(datafile)
     
     # Add in the prices at nearby PJM pnodes
-    df = price_at_pnodes(df, pnodes)
-    density_cloud_by_tags(df, 'DayOfWeek')
-    density_cloud_by_tags(df, 'Weekday')
-    density_cloud_by_tags(df, ['Season','Weekday'])
+    #df = price_at_pnodes(df, pnodes)
+    #density_cloud_by_tags(df, 'DayOfWeek')
+    #density_cloud_by_tags(df, 'Weekday')
+    #density_cloud_by_tags(df, ['Season','Weekday'])
     
-    raise Exception
     
     # Add in some weather info
-    df = load_weather(df, weather_station)
-    density_cloud_by_tags(df, 'TempGrads')
-    density_cloud_by_tags(df, 'Conditions')
+    #df = load_weather(df, weather_station)
+    #density_cloud_by_tags(df, 'TempGrads')
+    #density_cloud_by_tags(df, 'Conditions')
 
 
