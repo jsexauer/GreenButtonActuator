@@ -178,7 +178,7 @@ def price_at_pnodes(df, pnodes):
         assert len(pnode_prices['PRICINGTYPE'].unique()) == 1
         assert pnode_prices['PRICINGTYPE'].unique()[0] == 'TotalLMP'
         
-        # Unpiviot the data
+        # Unpivot the data
         pnode_prices = pandas.melt(pnode_prices, id_vars=['PUBLISHDATE'],
                     value_vars=['H%d'%i for i in xrange(1,25)])
         pnode_prices = pnode_prices.rename(columns={
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     plt.close('all')
     
     # Load data
-    datafile = r"C:\Users\Jason\Desktop\gb.xml"
+    datafile = r"C:\Users\Mike\Downloads\gb.xml"
     df = read_GB_xml(datafile)
     
     # Load data
@@ -309,9 +309,7 @@ if __name__ == '__main__':
     density_cloud_by_tags(df, 'DayOfWeek')
     density_cloud_by_tags(df, 'Weekday')
     density_cloud_by_tags(df, ['Season','Weekday'])
-    
-    raise Exception
-    
+        
     # Add in some weather info
     df = load_weather(df, weather_station)
     density_cloud_by_tags(df, 'TempGrads')

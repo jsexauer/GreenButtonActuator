@@ -88,6 +88,17 @@ def read_usage(excpetion=None):
         </form>
         """
 
+@app.route('/alt_pricing', methods=['POST','GET'])
+def alt_pricing(excpetion=None):
+    if request.method == 'POST':
+        # User has given us paramters, do calculation
+        return str(request.form)
+    else:
+        f = open("templates/priceChange.html") 
+        return f.read()
+        # User has not given us paramaters, ask them for some
+
+
 @app.route('/drop')
 def drop_dataframe():
     for k in session.keys():
