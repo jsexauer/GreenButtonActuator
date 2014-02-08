@@ -88,11 +88,16 @@ def read_GB_xml(datafile):
     getStart = lambda x: datetime.fromtimestamp(x).strftime('%H:%M')
     getEnd = lambda x, y: datetime.fromtimestamp(x+y).strftime('%H:%M')
     for r in soup.findAll('intervalreading'):
+        #import pdb; pdb.set_trace()
         dt = int(r.start.string)
         dur = int(r.duration.string)
+        try:
+            cost = float(r.cost.string)*(10.0**-5)
+        except AttributeError:
+            cost = None
         row = ['Electric usage', getDate(dt), getStart(dt), getEnd(dt, dur),
                #TYPE            DATE            START TIME  END TIME
-               float(r.value.string), 'kWh', -1.0, '']
+               float(r.value.string), 'kWh', cost, '']
                #USAGE   UNIT  COST  NOTES
         data.append(row)
 
@@ -243,56 +248,6 @@ def load_weather(df, weather_station):
 
 
 
-############################################################################
-# Line Chart Test
-# API sandbox: https://code.google.com/apis/ajax/playground/?type=visualization#annotated_time_line
-# API docs: https://developers.google.com/chart/interactive/docs/gallery/annotatedtimeline?csw=1
-# DataTable docs: https://developers.google.com/chart/interactive/docs/reference?csw=1
-def google_linechart(df):
-    template = "        {c:[{v: 'Date(%(ts)s)'}, {v: %(USAGE)s}, {v: %(COST)s}]},\n"
-    html = """
-    <!--
-    You are free to copy and use this sample in accordance with the terms of the
-    Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
-    -->
-    
-    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-    <html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-      <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-      <title>Google Visualization API Sample</title>
-      <script type="text/javascript" src="http://www.google.com/jsapi"></script>
-      <script type="text/javascript">
-        google.load('visualization', '1', {packages: ['annotatedtimeline']});
-        function drawVisualization() {
-          var data = new google.visualization.DataTable(
-          {
-           cols: [{id: 'date', label: 'Date', type: 'datetime'},
-                  {id: 'USAGE', label: 'Usage (kWh)', type: 'number'},
-                  {id: 'COST', label: 'Cost ($)', type: 'number'}],
-           rows: [
-    """
-    for lbl, r in df.iterrows():
-        r['ts']=r['ts'].strftime('%Y,%m,%d,%H,%M,%S')
-        html+= template % r.fillna('null')
-    html +="""
-                ]
-          });
-        
-          var annotatedtimeline = new google.visualization.AnnotatedTimeLine(
-              document.getElementById('visualization'));
-          annotatedtimeline.draw(data, {'displayAnnotations': true});
-        }
-        
-        google.setOnLoadCallback(drawVisualization);
-      </script>
-    </head>
-    <body style="font-family: Arial;border: 0 none;">
-    <div id="visualization" style="width: 800px; height: 400px;"></div>
-    </body>
-    </html>
-    """
-    return html
 
 def calculatePeakPrice(df, peak_start, peak_end, peak_price, off_peak_price):
     # print df
@@ -328,13 +283,12 @@ if __name__ == '__main__':
     #df = read_PECO_csv(datafile)
     
     # Add in the prices at nearby PJM pnodes
-    df = price_at_pnodes(df, pnodes)
-    print calculatePeakPrice(df, 0, 7, 9, 3)
+    #df = price_at_pnodes(df, pnodes)
+
     #density_cloud_by_tags(df, 'DayOfWeek')
     #density_cloud_by_tags(df, 'Weekday')
     #density_cloud_by_tags(df, ['Season','Weekday'])
     
-    #raise Exception
     
     # Add in some weather info
     #df = load_weather(df, weather_station)
