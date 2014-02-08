@@ -5956,52 +5956,15 @@
 	<title>Green Button Actuator</title>
 </head>
 <body>
-
     <header class="navbar navbar-fixed-top" style="margin-bottom:40px">
 	<div class="navbar-inner">
 		<div class="container">
 			<a href="#" id="logo">Green Button Actuator</a>
-			<nav>
-				<ul class="nav pull-right">
-					<li><a href="/dashboard" id="navlink">Dashboard</a>
-					<li><a href="/help" id="navlink">Help</a>
-				</ul>
-			</nav>
 		</div>
 	</div>
 </header>
 
 <div id="page-body">
 	<div class="page-header">
-		<h1 class="text-center">Dashboard <small> Lets Analyze Some Data!</small></h1>
+		<h1 class="text-center">Green Button Analysis<small> Upload your xml data!</small></h1>
 	</div>
-			
-	<div class="arter alert-info" style="width:160px; margin-bottom:30px"><p>View your raw data <a href="/raw">here</a></p></div>
-	
-	<form method=post action"">
-		<div style="margin-bottom:30px">
-			<p><h4>What Date Range do you want to Examine?</h4></p>
-			<div style="float: left; margin-right:20px">
-				<input type="text" class="input-medium" placeholder="Start Date" id="startDate" name="startDate">
-				<span class="help-block">01/01/1900</span>
-			</div>
-			<div style="display:inline float: left">
-				<input type="text" class="input-medium" placeholder="End Date" id="endDate" name="endDate">
-				<span class="help-block">01/01/1900</span>
-			</div>
-		</div>
-		
-		<div style="margin-bottom:30px">
-			<p><h4>Compare Various Time Frames And Weather:</h4></p>
-				{% from "_formhelpers.html" import render_field %}
-					<dl>
-						{{ render_field(form.tags) }} <br /> </dl>
-					
-					<p><h4>Alternate Pricing:</h4></p>	
-						{{ render_field(form.pnodes) }} <br />
-					</dl>
-				    <button type="submit" value="submit" class="btn btn-primary">Submit</button>
-					</form>
-				</div>
-				</body>
-				</html>
