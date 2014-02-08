@@ -97,7 +97,7 @@ def read_GB_xml(datafile):
             cost = None
         row = ['Electric usage', getDate(dt), getStart(dt), getEnd(dt, dur),
                #TYPE            DATE            START TIME  END TIME
-               float(r.value.string), 'kWh', cost, '']
+               float(r.value.string)/1000, 'kWh', cost, '']
                #USAGE   UNIT  COST  NOTES
         data.append(row)
 
