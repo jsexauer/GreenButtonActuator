@@ -157,12 +157,23 @@ def report():
     # For example, user could sumbit 2013-10:2014-02 but we need to make this
     #   into '2013-10':'2014-10'
     if 'idx' in session.keys() and len(session['idx'])>0:
+        session['_filter']
         idx = session['idx']
         if idx.find(':') > -1:
             lidx, ridx = idx.split(':')
             df = df[lidx:ridx]
         else:
             df = df[idx]
+            
+    
+    startDate = session['startDate']
+    endDate = session['endDate']
+    if startDate != '' and endDate != '':
+        # Filter the data frame to only be a subset of full time range
+        startDate = pandas.Timestamp(startDate)
+        endDate = pandas.Timestamp(endDate)
+        df = df[startDate:endDate]
+        
     
     figures = []
     if 'tags' in session.keys() and len(session['tags'])>0:
@@ -278,6 +289,37 @@ def google_linechart(df):
 def viewraw():
     assert_data()
     return google_linechart(session['df'])
+
+@app.route('/css/bootstrap-responsive.css')
+def serveBootstrapResponsivecss():
+    f=open("templates/css/bootstrap-responsive.css")
+    return f.read()
+    
+@app.route('/css/bootstrap.css')
+def serveBootstrapcss():
+    f=open("templates/css/bootstrap.css")
+    return f.read()
+
+@app.route('/css/styles.css')
+def serveStyles():
+    f=open("templates/css/styles.css")
+    return f.read()
+
+@app.route('/js/bootstrap.js')
+def serveJSBootstrap():
+    f=open("templates/js/bootstrap.js")
+    return f.read()
+
+@app.route('/js/jquery-1.8.2.js')
+def serveJquery():
+    f=open("templates/js/jquery-1.8.2.js")
+    return f.read()
+
+@app.route('/js/script.js')
+def serveScript():
+    f=open("templates/js/script.js")
+    return f.read()
+
 
 
 def assert_data():
