@@ -146,12 +146,23 @@ def report():
     # For example, user could sumbit 2013-10:2014-02 but we need to make this
     #   into '2013-10':'2014-10'
     if 'idx' in session.keys() and len(session['idx'])>0:
+        session['_filter']
         idx = session['idx']
         if idx.find(':') > -1:
             lidx, ridx = idx.split(':')
             df = df[lidx:ridx]
         else:
             df = df[idx]
+            
+    
+    startDate = session['startDate']
+    endDate = session['endDate']
+    if startDate != '' and endDate != '':
+        # Filter the data frame to only be a subset of full time range
+        startDate = pandas.Timestamp(startDate)
+        endDate = pandas.Timestamp(endDate)
+        df = df[startDate:endDate]
+        
     
     figures = []
     if 'tags' in session.keys() and len(session['tags'])>0:
