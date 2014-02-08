@@ -6,7 +6,7 @@ Created on Fri Jan 17 19:34:01 2014
 """
 
 
-datafile = 'DailyElectricUsage_2'
+datafile = 'DailyElectricUsage'
 pnodes = ['BARBADOES35 KV  ABU2',
           'BETZWOOD230 KV  LOAD1',
           'PECO',
@@ -34,7 +34,6 @@ def read_PECO_csv(datafile):
     else:        
         # Read in usage log (csv format, probably specific to PECO)
         df = pandas.read_csv(root+datafile+'.csv', skiprows=4)
-
     
     # Convert costs (drop dollar sign and convert to float)
     df['COST'] = df['COST'].str.slice(1).apply(lambda x: float(x))
@@ -98,7 +97,7 @@ def read_GB_xml(datafile):
             cost = None
         row = ['Electric usage', getDate(dt), getStart(dt), getEnd(dt, dur),
                #TYPE            DATE            START TIME  END TIME
-               float(r.value.string)/1000, 'kWh', cost, '']
+               float(r.value.string), 'kWh', cost, '']
                #USAGE   UNIT  COST  NOTES
         data.append(row)
 
@@ -250,52 +249,27 @@ def load_weather(df, weather_station):
 
 
 
-def calculate_peak_price(df, peak_start, peak_end, peak_price, off_peak_price):
-    # print df
-    # import pdb; pdb.set_trace()
-    total_usage = 0
-    on_peak_hours = df[ (df['hr']>=peak_start) & (df['hr']<peak_end)]
-    off_peak_hours = df[ (df['hr']<peak_start) | (df['hr']>=peak_end)]
-    
-    old_on_peak_cost = on_peak_hours['COST'].sum()
-    old_off_peak_cost = off_peak_hours['COST'].sum()
-    total_old_off_peak = old_off_peak_cost + old_on_peak_cost
-    
-    on_peak_usage = on_peak_hours['USAGE'].sum()
-    off_peak_usage = off_peak_hours['USAGE'].sum()
-
-    print "on"
-    print on_peak_usage
-
-    print "off"
-    print off_peak_usage
-
-    new_on_peak_cost = on_peak_usage * peak_price
-    new_off_peak_cost = off_peak_usage * off_peak_price
-
-    return (total_old_off_peak, new_on_peak_cost, new_off_peak_cost)
-
 if __name__ == '__main__':
     plt.close('all')
     
     # Load data
-<<<<<<< HEAD
-    datafile = r"test"
-    df = read_PECO_csv(datafile)
+    #datafile = r"test"
+    #df = read_PECO_csv(datafile)
     #datafile = r"gb.xml"
     #df = read_GB_xml(datafile)
-    print calculate_peak_price(df, 7, 19, 0.12, 0.03)
-=======
-    datafile = r"gb.xml"
-    df = read_GB_xml(datafile)
->>>>>>> origin/web_changes
-    
+    #print calculate_peak_price(df, 7, 19, 0.12, 0.03)
+
+#    datafile = r"gb.xml"
+#    df = read_GB_xml(datafile)
+
+#    datafile = r"gb.xml"
+#    df = read_GB_xml(datafile)
+
     # Load data
     #df = read_PECO_csv(datafile)
     
     # Add in the prices at nearby PJM pnodes
     #df = price_at_pnodes(df, pnodes)
-
     #density_cloud_by_tags(df, 'DayOfWeek')
     #density_cloud_by_tags(df, 'Weekday')
     #density_cloud_by_tags(df, ['Season','Weekday'])
