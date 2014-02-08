@@ -6,6 +6,7 @@ from flask import (Flask, request, session, redirect, url_for, render_template,
 from serverside_sessions import create_managed_session
 from StringIO import StringIO
 from werkzeug import secure_filename
+import pandas
 
 root = os.path.dirname(os.path.realpath(__file__))+os.sep
 
@@ -145,6 +146,8 @@ def dashboard():
         session['tags'] = form.tags.data
         session['pnodes'] = form.pnodes.data
         session['idx'] = form.idx.data
+        session['startDate'] = request.form['startDate']
+        session['endDate'] = request.form['endDate']
         return redirect(url_for('report'))
     return render_template('dashboard.html', form=form)
 
@@ -165,14 +168,20 @@ def report():
         else:
             df = df[idx]
             
-    # WILL CAUSE MERGE CONFLICTS.  TAKE NEW, NOT THIS ONE
-#    startDate = session['startDate']
-#    endDate = session['endDate']
-#    if startDate != '' and endDate != '':
-#        # Filter the data frame to only be a subset of full time range
-#        startDate = pandas.Timestamp(startDate)
-#        endDate = pandas.Timestamp(endDate)
-#        df = df[startDate:endDate]
+    if 'startDate' in session.keys() and 'endDate' in session.keys():
+        startDat = session['startDate']
+        endDat = session['endDate']
+
+        #return "%s %s" % (pandas.Timestamp(startDat), startDat)        
+        if startDat != '' and endDat != '':
+            # Filter the data frame to only be a subset of full time range
+            try:
+                startDate = pandas.Timestamp(startDat)
+                endDate = pandas.Timestamp(endDat)
+                df = df[startDate:endDate]
+            except:
+                return "Timestamp error"
+            #return str(df)
         
     
     figures = []
