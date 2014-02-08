@@ -75,18 +75,8 @@ def read_usage(excpetion=None):
             msg =  "Loaded default dataset..."
             return redirect(url_for('dashboard'))
     else:
-        return """
-        <h1>Green Button Analysis</h1>
-        <p>If your utiltiy supports Green-Button export, upload the xml
-        data using the dialog below.  </p>
-        <p>Otherwise, leave box blank to 
-        load a sample dataset.</p>
-        <form action="" method="post" enctype="multipart/form-data" >
-        <input type=file name=file />
-        <p><input type='submit' /></p>
-        <p><input type='submit' value="I have no data, use default" /></p>
-        </form>
-        """
+        f = open("templates/read_usage.html")
+        return f.read()
 
 @app.route('/drop')
 def drop_dataframe():
