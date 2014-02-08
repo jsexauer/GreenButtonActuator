@@ -189,7 +189,7 @@ def report():
         png_output = StringIO()
         canvas.print_png(png_output)
         figures_rendered.append(png_output.getvalue())
-        template_plots.append( ("Plot #%d" % n, n) )
+        template_plots.append( ("Plot Title Here", n) )
     session['figures'] = figures_rendered
     s += '<p><a href="/dashboard">Back to dashboard</a></p><br /><br />'
     
