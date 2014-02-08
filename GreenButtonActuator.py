@@ -294,11 +294,34 @@ def google_linechart(df):
     """
     return html
 
+def calculatePeakPrice(df, peak_start, peak_end, peak_price, off_peak_price):
+    # print df
+    # import pdb; pdb.set_trace()
+    total_usage = 0
+    on_peak_hours = df[ (df['hr']>=peak_start) & (df['hr']<peak_end)]
+    off_peak_hours = df[ (df['hr']<peak_start) | (df['hr']>=peak_end)]
+    
+    old_on_peak_cost = on_peak_hours['COST'].sum()
+    old_off_peak_cost = off_peak_hours['COST'].sum()
+    total_old_off_peak = old_off_peak_cost + old_on_peak_cost
+    
+    on_peak_usage = on_peak_hours['USAGE'].sum()
+    off_peak_usage = off_peak_hours['USAGE'].sum()
+    
+    print "off_peak_usage"
+    print off_peak_usage 
+
+
+    new_on_peak_cost = on_peak_usage * peak_price
+    new_off_peak_cost = off_peak_usage * off_peak_price
+
+    return (total_old_off_peak, new_on_peak_cost, new_off_peak_cost)
+
 if __name__ == '__main__':
     plt.close('all')
     
     # Load data
-    datafile = r"C:\Users\Jason\Desktop\gb.xml"
+    datafile = r"gb.xml"
     df = read_GB_xml(datafile)
     
     # Load data
@@ -306,15 +329,16 @@ if __name__ == '__main__':
     
     # Add in the prices at nearby PJM pnodes
     df = price_at_pnodes(df, pnodes)
-    density_cloud_by_tags(df, 'DayOfWeek')
-    density_cloud_by_tags(df, 'Weekday')
-    density_cloud_by_tags(df, ['Season','Weekday'])
+    print calculatePeakPrice(df, 0, 7, 9, 3)
+    #density_cloud_by_tags(df, 'DayOfWeek')
+    #density_cloud_by_tags(df, 'Weekday')
+    #density_cloud_by_tags(df, ['Season','Weekday'])
     
-    raise Exception
+    #raise Exception
     
     # Add in some weather info
-    df = load_weather(df, weather_station)
-    density_cloud_by_tags(df, 'TempGrads')
-    density_cloud_by_tags(df, 'Conditions')
+    #df = load_weather(df, weather_station)
+    #density_cloud_by_tags(df, 'TempGrads')
+    #density_cloud_by_tags(df, 'Conditions')
 
 
