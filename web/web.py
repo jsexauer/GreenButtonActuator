@@ -214,6 +214,37 @@ def viewraw():
     assert_data()
     return GBA.google_linechart(session['df'])
 
+@app.route('/css/bootstrap-responsive.css')
+def serveBootstrapResponsivecss():
+    f=open("templates/css/bootstrap-responsive.css")
+    return f.read()
+    
+@app.route('/css/bootstrap.css')
+def serveBootstrapcss():
+    f=open("templates/css/bootstrap.css")
+    return f.read()
+
+@app.route('/css/styles.css')
+def serveStyles():
+    f=open("templates/css/styles.css")
+    return f.read()
+
+@app.route('/js/bootstrap.js')
+def serveJSBootstrap():
+    f=open("templates/js/bootstrap.js")
+    return f.read()
+
+@app.route('/js/jquery-1.8.2.js')
+def serveJquery():
+    f=open("templates/js/jquery-1.8.2.js")
+    return f.read()
+
+@app.route('/js/script.js')
+def serveScript():
+    f=open("templates/js/script.js")
+    return f.read()
+
+
 
 def assert_data():
     if 'df' not in session.keys():

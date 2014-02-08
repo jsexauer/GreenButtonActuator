@@ -148,7 +148,7 @@ def density_cloud_by_tags(df, columns, silent=False):
             C[hr,:] = freq
         
         plt.figure()
-        plt.xkcd()
+        #plt.xkcd()
         plt.pcolor(X, Y, C, cmap=plt.cm.YlOrRd)
         plt.plot(X[:,1], mean, color='k', label='Mean')
         plt.colorbar().set_label('Probability Higher/Lower than Median')    
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     plt.close('all')
     
     # Load data
-    datafile = r"C:\Users\Jason\Desktop\gb.xml"
+    datafile = r"gb.xml"
     df = read_GB_xml(datafile)
     
     # Load data
