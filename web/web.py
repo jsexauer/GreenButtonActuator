@@ -73,7 +73,7 @@ def read_usage(excpetion=None):
             df = GBA.load_weather(df, 'KLOM_norristown')
             session['df'] = df
             msg =  "Loaded default dataset..."
-        return msg+'<br /> <a href="/dashboard">Go to dashboard</a>'
+            return redirect(url_for('dashboard'))
     else:
         return """
         <h1>Green Button Analysis</h1>
@@ -92,7 +92,8 @@ def read_usage(excpetion=None):
 def drop_dataframe():
     for k in session.keys():
         session.drop(k)
-    return "Your data has been removed from the server"
+    return redirect(url_for('read_usage'))
+
 
 ####################################################################
 # Dashboard
