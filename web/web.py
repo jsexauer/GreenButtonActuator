@@ -193,7 +193,8 @@ def report():
     session['figures'] = figures_rendered
     s += '<p><a href="/dashboard">Back to dashboard</a></p><br /><br />'
     
-    return render_template('report.html', plots=template_plots)
+    #return render_template('report.html', plots=template_plots)
+    return "Function works"
         
 
 @app.route("/plt/<int:fig_id>.png")
