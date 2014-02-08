@@ -68,6 +68,7 @@ def read_usage(excpetion=None):
             else:
                 session['df'] = df
                 msg = "Loaded your data..."
+                return redirect(url_for('dashboard'))
         else:
             # Read in default dataset
             df = GBA.read_PECO_csv('DailyElectricUsage')
@@ -78,6 +79,7 @@ def read_usage(excpetion=None):
     else:
         f = open(root+r"/templates/read_usage.html")
         return f.read()
+    return redirect(url_for('dashboard'))
 
 @app.route('/alt_pricing', methods=['POST','GET'])
 def alt_pricing(excpetion=None):
