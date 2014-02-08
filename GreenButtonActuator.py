@@ -183,7 +183,7 @@ def price_at_pnodes(df, pnodes):
         assert len(pnode_prices['PRICINGTYPE'].unique()) == 1
         assert pnode_prices['PRICINGTYPE'].unique()[0] == 'TotalLMP'
         
-        # Unpiviot the data
+        # Unpivot the data
         pnode_prices = pandas.melt(pnode_prices, id_vars=['PUBLISHDATE'],
                     value_vars=['H%d'%i for i in xrange(1,25)])
         pnode_prices = pnode_prices.rename(columns={
@@ -253,6 +253,7 @@ if __name__ == '__main__':
     plt.close('all')
     
     # Load data
+
     #datafile = r"test"
     #df = read_PECO_csv(datafile)
     #datafile = r"gb.xml"
@@ -265,6 +266,7 @@ if __name__ == '__main__':
 #    datafile = r"gb.xml"
 #    df = read_GB_xml(datafile)
 
+
     # Load data
     #df = read_PECO_csv(datafile)
     
@@ -273,11 +275,37 @@ if __name__ == '__main__':
     #density_cloud_by_tags(df, 'DayOfWeek')
     #density_cloud_by_tags(df, 'Weekday')
     #density_cloud_by_tags(df, ['Season','Weekday'])
-    
-    
+
+
     # Add in some weather info
     #df = load_weather(df, weather_station)
     #density_cloud_by_tags(df, 'TempGrads')
     #density_cloud_by_tags(df, 'Conditions')
 
+def calculate_peak_price(df, peak_start, peak_end, peak_price, off_peak_price):
 
+    total_usage = 0
+
+    on_peak_hours = df[ (df['hr']>=peak_start) & (df['hr']<peak_end)]
+
+    off_peak_hours = df[ (df['hr']<peak_start) | (df['hr']>=peak_end)]
+
+    
+    old_on_peak_cost = on_peak_hours['COST'].sum()
+
+    old_off_peak_cost = off_peak_hours['COST'].sum()
+
+    total_old_off_peak = old_off_peak_cost + old_on_peak_cost
+
+    
+    on_peak_usage = on_peak_hours['USAGE'].sum()
+
+    off_peak_usage = off_peak_hours['USAGE'].sum()
+
+
+    new_on_peak_cost = on_peak_usage * peak_price
+
+    new_off_peak_cost = off_peak_usage * off_peak_price
+    
+
+    return (total_old_off_peak, new_on_peak_cost, new_off_peak_cost)

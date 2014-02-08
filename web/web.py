@@ -6,6 +6,7 @@ from flask import (Flask, request, session, redirect, url_for, render_template,
 from serverside_sessions import create_managed_session
 from StringIO import StringIO
 from werkzeug import secure_filename
+import pandas
 
 root = os.path.dirname(os.path.realpath(__file__))+os.sep
 
@@ -78,6 +79,17 @@ def read_usage(excpetion=None):
         f = open("templates/read_usage.html")
         return f.read()
 
+@app.route('/alt_pricing', methods=['POST','GET'])
+def alt_pricing(excpetion=None):
+    if request.method == 'POST':
+        # User has given us paramters, do calculation
+        return str(request.form)
+    else:
+        f = open("templates/priceChange.html") 
+        return f.read()
+        # User has not given us paramaters, ask them for some
+
+
 @app.route('/drop')
 def drop_dataframe():
     for k in session.keys():
@@ -125,6 +137,8 @@ def dashboard():
         session['tags'] = form.tags.data
         session['pnodes'] = form.pnodes.data
         session['idx'] = form.idx.data
+        session['startDate'] = request.form['startDate']
+        session['endDate'] = request.form['endDate']
         return redirect(url_for('report'))
     return render_template('dashboard.html', form=form)
 
@@ -145,14 +159,20 @@ def report():
         else:
             df = df[idx]
             
-    
-    startDate = session['startDate']
-    endDate = session['endDate']
-    if startDate != '' and endDate != '':
-        # Filter the data frame to only be a subset of full time range
-        startDate = pandas.Timestamp(startDate)
-        endDate = pandas.Timestamp(endDate)
-        df = df[startDate:endDate]
+    if 'startDate' in session.keys() and 'endDate' in session.keys():
+        startDat = session['startDate']
+        endDat = session['endDate']
+
+        #return "%s %s" % (pandas.Timestamp(startDat), startDat)        
+        if startDat != '' and endDat != '':
+            # Filter the data frame to only be a subset of full time range
+            try:
+                startDate = pandas.Timestamp(startDat)
+                endDate = pandas.Timestamp(endDat)
+                df = df[startDate:endDate]
+            except:
+                return "Timestamp error"
+            #return str(df)
         
     
     figures = []
@@ -180,12 +200,11 @@ def report():
         png_output = StringIO()
         canvas.print_png(png_output)
         figures_rendered.append(png_output.getvalue())
-        template_plots.append( ("Plot Title Here", n) )
+        template_plots.append( ("Plot #%d"%n, "plt/%d.png"%n) )
     session['figures'] = figures_rendered
     s += '<p><a href="/dashboard">Back to dashboard</a></p><br /><br />'
     
-    #return render_template('report.html', plots=template_plots)
-    return "Function works"
+    return render_template('report.html', plots=template_plots)
         
 
 @app.route("/plt/<int:fig_id>.png")
