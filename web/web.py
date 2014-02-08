@@ -76,7 +76,7 @@ def read_usage(excpetion=None):
             msg =  "Loaded default dataset..."
             return redirect(url_for('dashboard'))
     else:
-        f = open("./templates/read_usage.html")
+        f = open(root+r"/templates/read_usage.html")
         return f.read()
 
 @app.route('/alt_pricing', methods=['POST','GET'])
