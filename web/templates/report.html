@@ -17431,33 +17431,20 @@
 
 <div class="accordion" id="accordion2">
 
-
-
+{% for plt in plots %}
   <div class="accordion-group">
     <div class="accordion-heading">
-      <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapse1">
-        Graph: {{ title }}
+      <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapse{{ loop.index }}">
+        Graph: {{ plt[0] }}
       </a>
     </div>
-    <div id="collapse1" class="accordion-body collapse in">
+    <div id="collapse{{ loop.index }}" class="accordion-body collapse in">
       <div class="accordion-inner">
-        <img src="{{ image_source }}">
+        <img src="{{ plt[1] }}">
       </div>
     </div>
   </div>
-  
-  <div class="accordion-group">
-    <div class="accordion-heading">
-      <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapse2">
-        Graph: {{ title }}
-      </a>
-    </div>
-    <div id="collapse2" class="accordion-body collapse in">
-      <div class="accordion-inner">
-        <img src="{{ image_source }">
-      </div>
-    </div>
-  </div>
+{% endfor %}  
   
 </div>
 

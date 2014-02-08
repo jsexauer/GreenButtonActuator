@@ -182,15 +182,18 @@ def report():
     session.drop('tags')
     s = '<h1>Figures</h1>'
     figures_rendered = []
+    template_plots = []
     for n, fig in enumerate(figures):
         s+='<img src="plt/%d.png" /><br />' % n
         canvas=FigureCanvas(fig)
         png_output = StringIO()
         canvas.print_png(png_output)
         figures_rendered.append(png_output.getvalue())
+        template_plots.append( ("Plot #%d" % n, n) )
     session['figures'] = figures_rendered
     s += '<p><a href="/dashboard">Back to dashboard</a></p><br /><br />'
-    return s
+    
+    return render_template('report.html', plots=template_plots)
         
 
 @app.route("/plt/<int:fig_id>.png")
