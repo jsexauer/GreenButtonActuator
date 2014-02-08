@@ -165,14 +165,14 @@ def report():
         else:
             df = df[idx]
             
-    
-    startDate = session['startDate']
-    endDate = session['endDate']
-    if startDate != '' and endDate != '':
-        # Filter the data frame to only be a subset of full time range
-        startDate = pandas.Timestamp(startDate)
-        endDate = pandas.Timestamp(endDate)
-        df = df[startDate:endDate]
+    # WILL CAUSE MERGE CONFLICTS.  TAKE NEW, NOT THIS ONE
+#    startDate = session['startDate']
+#    endDate = session['endDate']
+#    if startDate != '' and endDate != '':
+#        # Filter the data frame to only be a subset of full time range
+#        startDate = pandas.Timestamp(startDate)
+#        endDate = pandas.Timestamp(endDate)
+#        df = df[startDate:endDate]
         
     
     figures = []
@@ -200,12 +200,11 @@ def report():
         png_output = StringIO()
         canvas.print_png(png_output)
         figures_rendered.append(png_output.getvalue())
-        template_plots.append( ("Plot Title Here", n) )
+        template_plots.append( ("Plot #%d"%n, "plt/%d.png"%n) )
     session['figures'] = figures_rendered
     s += '<p><a href="/dashboard">Back to dashboard</a></p><br /><br />'
     
-    #return render_template('report.html', plots=template_plots)
-    return "Function works"
+    return render_template('report.html', plots=template_plots)
         
 
 @app.route("/plt/<int:fig_id>.png")

@@ -282,4 +282,30 @@ if __name__ == '__main__':
     #density_cloud_by_tags(df, 'TempGrads')
     #density_cloud_by_tags(df, 'Conditions')
 
+def calculate_peak_price(df, peak_start, peak_end, peak_price, off_peak_price):
 
+    total_usage = 0
+
+    on_peak_hours = df[ (df['hr']>=peak_start) & (df['hr']<peak_end)]
+
+    off_peak_hours = df[ (df['hr']<peak_start) | (df['hr']>=peak_end)]
+
+    
+    old_on_peak_cost = on_peak_hours['COST'].sum()
+
+    old_off_peak_cost = off_peak_hours['COST'].sum()
+
+    total_old_off_peak = old_off_peak_cost + old_on_peak_cost
+
+    
+    on_peak_usage = on_peak_hours['USAGE'].sum()
+
+    off_peak_usage = off_peak_hours['USAGE'].sum()
+
+
+    new_on_peak_cost = on_peak_usage * peak_price
+
+    new_off_peak_cost = off_peak_usage * off_peak_price
+    
+
+    return (total_old_off_peak, new_on_peak_cost, new_off_peak_cost)
