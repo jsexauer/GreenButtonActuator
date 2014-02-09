@@ -85,11 +85,22 @@ def read_usage(excpetion=None):
 def alt_pricing(excpetion=None):
     if request.method == 'POST':
         # User has given us paramters, do calculation
-        return str(request.form)
+        offPeak = request.form['offPeak']
+        peakRate = request.form['peakRate']
+        startTime = request.form['startTime']
+        endTime = request.form['endTime']
+        df = session['df']
+        result = GBA.calculate_peak_price(df, int(startTime), 
+                                          int(endTime), float(peakRate), 
+                                          float(offPeak))
+
+        return ("<h1>Old cost: $%0.2f <br> New peak cost: $%0.2f <br>"
+                "New off-peak cost: $%0.2f <br></h1>") %result
     else:
+        # User has not given us paramaters, ask them for some
         f = open("templates/priceChange.html") 
         return f.read()
-        # User has not given us paramaters, ask them for some
+        
 
 
 @app.route('/drop')
