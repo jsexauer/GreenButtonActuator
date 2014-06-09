@@ -280,7 +280,7 @@ def google_linechart(df):
            rows: [
     """
     for lbl, r in df.iterrows():
-        r['ts']=r['ts'].strftime('%Y,%m,%d,%H,%M,%S')
+        r['ts']=r['ts'].strftime('%Y,{},%d,%H,%M,%S').format(r['ts'].month-1)
         html+= template % r.fillna('null')
     html +="""
                 ]
