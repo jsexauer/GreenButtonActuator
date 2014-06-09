@@ -255,8 +255,8 @@ def render_figure(fig_id):
 # API sandbox: https://code.google.com/apis/ajax/playground/?type=visualization#annotated_time_line
 # API docs: https://developers.google.com/chart/interactive/docs/gallery/annotatedtimeline?csw=1
 # DataTable docs: https://developers.google.com/chart/interactive/docs/reference?csw=1
-def google_linechart(df):
-    template = "        {c:[{v: 'Date(%(ts)s)'}, {v: %(USAGE)s}, {v: %(COST)s}]},\n"
+def google_linechart(df, cols, template):
+    
     html = """
     <!--
     You are free to copy and use this sample in accordance with the terms of the
@@ -274,11 +274,9 @@ def google_linechart(df):
         function drawVisualization() {
           var data = new google.visualization.DataTable(
           {
-           cols: [{id: 'date', label: 'Date', type: 'datetime'},
-                  {id: 'USAGE', label: 'Usage (kWh)', type: 'number'},
-                  {id: 'COST', label: 'Cost ($)', type: 'number'}],
+           cols: %s,
            rows: [
-    """
+    """ % cols
     for lbl, r in df.iterrows():
         r['ts']=r['ts'].strftime('%Y,{},%d,%H,%M,%S').format(r['ts'].month-1)
         html+= template % r.fillna('null')
@@ -304,7 +302,55 @@ def google_linechart(df):
 @app.route('/raw')
 def viewraw():
     assert_data()
-    return google_linechart(session['df'])
+    cols = """
+    [{id: 'date', label: 'Date', type: 'datetime'},
+     {id: 'USAGE', label: 'Usage (kWh)', type: 'number'},
+     {id: 'COST', label: 'Cost ($)', type: 'number'}]
+    """
+    template = "        {c:[{v: 'Date(%(ts)s)'}, {v: %(USAGE)s}, {v: %(COST)s}]},\n"
+    return google_linechart(session['df'], cols, template)
+
+@app.route('/compare_year')
+def viewcompare():
+    assert_data()
+    df = session['df'].copy()
+    this_year = df.iloc[-1]['ts'].year
+    last_year = this_year - 1
+    this_year_df = df[df.apply(lambda x: x['ts'].year==this_year, axis=1)][
+                                                        ['ts','COST','USAGE']]
+    last_year_df = df[df.apply(lambda x: x['ts'].year==last_year, axis=1)][
+                                                        ['ts','COST','USAGE']]
+    last_year_df = last_year_df.rename(columns={'COST':'COST2',
+                                             'USAGE':'USAGE2'})
+    # Give last year this year's date (for comparison's sake)
+    last_year_df['ts'] = last_year_df['ts'].apply(
+                            lambda x: x.replace(year=this_year))
+    #this_year_df = this_year_df.set_index('ts',drop=False)
+    #last_year_df = last_year_df.set_index('ts',drop=False)
+    df = this_year_df.merge(last_year_df, how='left')
+    df = df.set_index('ts', drop=False)
+    
+    # Aggregate to daily
+    df = df.resample('D', how='sum')
+    df['ts'] = df.index
+
+    # Smoth the data
+    from pandas.stats.moments import ewma
+    cols = ['COST','COST2','USAGE','USAGE2']
+    df[cols] = ewma(df[cols], span=3)
+    
+    cols = """
+    [{id: 'date', label: 'Date', type: 'datetime'},
+     {id: 'USAGE', label: 'Usage (%s) (kWh)', type: 'number'},
+     {id: 'COST', label: 'Cost (%s) ($)', type: 'number'},
+     {id: 'USAGE2', label: 'Usage (%s) (kWh)', type: 'number'},
+     {id: 'COST2', label: 'Cost (%s) ($)', type: 'number'}     ]
+    """ % (this_year, this_year, last_year, last_year)
+    template = ("        {c:[{v: 'Date(%(ts)s)'}, "
+                "{v: %(USAGE)s}, {v: %(COST)s}, "
+                "{v: %(USAGE2)s}, {v: %(COST2)s}]},\n")
+                
+    return google_linechart(df, cols, template)
 
 @app.route('/css/bootstrap-responsive.css')
 def serveBootstrapResponsivecss():
